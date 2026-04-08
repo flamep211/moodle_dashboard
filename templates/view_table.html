@@ -1,0 +1,128 @@
+<!-- templates/view_table.html -->
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Содержимое таблицы {{ table_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__title">Moodle Analytics</div>
+        <div class="brand__subtitle">Панель качества (демо)</div>
+      </div>
+      <nav class="nav">
+        <a class="nav__item" href="/">Панель</a>
+        <a class="nav__item" href="/courses">Курсы</a>
+        <a class="nav__item" href="/students">Студенты</a>
+        <a class="nav__item" href="/analytics">Аналитика</a>
+        {% if role == 'admin' %}
+          <a class="nav__item nav__item--active" href="/admin">Администрирование</a>
+        {% endif %}
+      </nav>
+      <div class="sidebar__footer">
+        <div class="userbox">
+          <div class="userbox__name">{{ username }}</div>
+          <div class="userbox__meta">{{ role }}</div>
+        </div>
+        <a class="btn btn--ghost" href="/logout">Выйти</a>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 class="page-title">Таблица {{ table_name }}</h1>
+          <div class="muted">Просмотр содержимого базы данных</div>
+        </div>
+        <form method="get" class="form-inline m-t-05">
+          <input class="select" type="text" name="q" placeholder="Поиск по всем полям" value="{{ query }}">
+          <button class="btn btn--primary" type="submit">Найти</button>
+        </form>
+      </header>
+      <div class="card">
+        <div class="table-wrap">
+          {% if records|length == 0 %}
+            <div class="empty">Таблица пустая или нет результатов поиска.</div>
+          {% else %}
+            <table class="table">
+              <thead>
+                <tr>
+                  {% for col in columns %}
+                    <th>{{ col }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in records %}
+                  <tr>
+                    {% for col in columns %}
+                      <td>{{ row[col] }}</td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        </div>
+        <div class="pagination m-t-1">
+          {% if has_prev %}
+            <a class="btn btn--ghost" href="?page={{ page-1 }}{% if query %}&q={{ query }}{% endif %}">&larr; Назад</a>
+          {% endif %}
+          <span class="p-x-half">Стр. {{ page }}</span>
+          {% if has_next %}
+            <a class="btn btn--ghost" href="?page={{ page+1 }}{% if query %}&q={{ query }}{% endif %}">Вперед &rarr;</a>
+          {% endif %}
+        </div>
+        <div class="m-t-1">
+          <a class="btn btn--ghost" href="/admin">&larr; Назад к администрированию</a>
+        </div>
+      </div>
+    </main>
+
+    <!-- Fixed Theme Toggle Button -->
+    <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">
+      🌙
+    </button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const body = document.body;
+      const themeToggle = document.getElementById('theme-toggle-fixed');
+      if (!themeToggle) {
+        console.error('Theme toggle button not found');
+        return;
+      }
+      const userTheme = '{{ user_theme }}';
+
+      const setTheme = (isDark) => {
+        body.classList.toggle('dark', isDark);
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+      };
+
+      if (userTheme === 'dark') {
+        setTheme(true);
+      } else {
+        setTheme(false);
+      }
+
+      themeToggle.addEventListener('click', () => {
+        const isDark = body.classList.toggle('dark');
+        const themeName = isDark ? 'dark' : 'light';
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+
+        fetch('/api/theme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: themeName })
+        });
+      });
+    });
+  </script>
+</body>
+</html>

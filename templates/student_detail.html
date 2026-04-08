@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Студент: {{ student.name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__title">Moodle Analytics</div>
+        <div class="brand__subtitle">Панель качества (демо)</div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav__item" href="/">Панель</a>
+        <a class="nav__item" href="/courses">Курсы</a>
+        <a class="nav__item nav__item--active" href="/students">Студенты</a>
+        <a class="nav__item" href="/analytics">Аналитика</a>
+        {% if role == "admin" %}
+          <a class="nav__item" href="/admin">Администрирование</a>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar__footer">
+        <div class="userbox">
+          <div class="userbox__name">{{ username }}</div>
+          <div class="userbox__meta">{{ role }}</div>
+        </div>
+        <a class="btn btn--ghost" href="/logout">Выйти</a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 class="page-title">Студент: {{ student.name }}</h1>
+          <div class="muted">ID: {{ student.id }} • Группа: {{ student.group }}</div>
+        </div>
+        <div>
+          <a href="/students" class="btn btn--ghost" style="margin-right: 10px;">← Назад к студентам</a>
+        </div>
+      </header>
+
+      <!-- STUDENT METRICS -->
+      <section class="grid grid--4">
+        <div class="card">
+          <div class="card__title">Курсов всего</div>
+          <div class="kpi">{{ total_courses }}</div>
+          <div class="muted">записан</div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Курсов сдано</div>
+          <div class="kpi">{{ passed_courses }}</div>
+          <div class="muted">≥ {{ pass_threshold }} баллов</div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Средний балл</div>
+          <div class="kpi" style="color: {% if avg_grade >= pass_threshold %}#48bb78{% elif avg_grade >= 60 %}#ed8936{% else %}#f56565{% endif %}">
+            {{ avg_grade }}
+          </div>
+          <div class="muted">из 100</div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Группа (среднее)</div>
+          <div class="kpi">{{ group_avg }}</div>
+          <div class="muted">баллов</div>
+        </div>
+      </section>
+
+      <!-- GRADES AND ACTIVITY -->
+      <section class="grid grid--2">
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Оценки по курсам</div>
+            <div class="muted">текущие результаты</div>
+          </div>
+          <div class="table-wrap">
+            {% if grades %}
+              <table class="table">
+                <thead>
+                  <tr><th>Курс</th><th>Оценка</th><th>Статус</th></tr>
+                </thead>
+                <tbody>
+                  {% for grade in grades %}
+                    <tr>
+                      <td>{{ grade.course_name }}</td>
+                      <td>{{ grade.grade }}</td>
+                      <td>
+                        {% if grade.grade >= pass_threshold %}
+                          <span class="badge" style="background: #c6f6d5; color: #22543d;">Сдано</span>
+                        {% else %}
+                          <span class="badge" style="background: #fed7d7; color: #742a2a;">Не сдано</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="empty">Нет оценок</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Активность по курсам</div>
+            <div class="muted">количество событий</div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="activityChart" style="max-height: 300px;"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACTIVITY TIMELINE -->
+      <section class="grid grid--2">
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Активность по дням</div>
+            <div class="muted">последние дни</div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="timelineChart" style="max-height: 300px;"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Последняя активность</div>
+            <div class="muted">10 последних событий</div>
+          </div>
+          <div style="max-height: 300px; overflow-y: auto;">
+            {% if recent_logs %}
+              {% for log in recent_logs %}
+                <div style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+                  <div style="font-weight: 600; color: #2d3748;">{{ log.action }}</div>
+                  <div class="muted">{{ log.course_name }} • {{ log.date }}</div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty">Нет активности</div>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+      <!-- COMPARISON -->
+      <section class="grid grid--1">
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Сравнение с группой</div>
+            <div class="muted">как {{ student.name }} выглядит среди одногруппников</div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="comparisonChart" style="max-height: 200px;"></canvas>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const body = document.body;
+      const themeToggle = document.getElementById('theme-toggle-fixed');
+      if (!themeToggle) {
+        console.error('Theme toggle button not found');
+        return;
+      }
+      const userTheme = '{{ user_theme }}';
+
+      const setTheme = (isDark) => {
+        body.classList.toggle('dark', isDark);
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+      };
+
+      if (userTheme === 'dark') {
+        setTheme(true);
+      } else {
+        setTheme(false);
+      }
+
+      themeToggle.addEventListener('click', () => {
+        const isDark = body.classList.toggle('dark');
+        const themeName = isDark ? 'dark' : 'light';
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+        
+        fetch('/api/theme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: themeName })
+        });
+      });
+    });
+
+    // Activity by course chart
+    const activityData = {{ activity_by_course | tojson }};
+    const activityCtx = document.getElementById('activityChart');
+    new Chart(activityCtx, {
+      type: 'bar',
+      data: {
+        labels: activityData.map(d => d.course_name),
+        datasets: [{
+          label: 'События',
+          data: activityData.map(d => d.events),
+          backgroundColor: 'rgba(102, 126, 234, 0.6)',
+          borderColor: 'rgba(102, 126, 234, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // Timeline chart
+    const timelineData = {{ activity_by_date | tojson }};
+    const timelineCtx = document.getElementById('timelineChart');
+    new Chart(timelineCtx, {
+      type: 'line',
+      data: {
+        labels: timelineData.map(d => d.date),
+        datasets: [{
+          label: 'Активность',
+          data: timelineData.map(d => d.events),
+          borderColor: 'rgba(102, 126, 234, 1)',
+          backgroundColor: 'rgba(102, 126, 234, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // Comparison chart
+    const studentAvg = {{ avg_grade }};
+    const groupAvg = {{ group_avg }};
+    const comparisonCtx = document.getElementById('comparisonChart');
+    new Chart(comparisonCtx, {
+      type: 'bar',
+      data: {
+        labels: ['{{ student.name }}', 'Группа (среднее)'],
+        datasets: [{
+          label: 'Средний балл',
+          data: [studentAvg, groupAvg],
+          backgroundColor: [
+            studentAvg >= groupAvg ? 'rgba(72, 187, 120, 0.6)' : 'rgba(245, 101, 101, 0.6)',
+            'rgba(102, 126, 234, 0.6)'
+          ],
+          borderColor: [
+            studentAvg >= groupAvg ? 'rgba(72, 187, 120, 1)' : 'rgba(245, 101, 101, 1)',
+            'rgba(102, 126, 234, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, max: 100 } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  </script>
+
+  <style>
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    body.dark .badge[style*="background: #c6f6d5"] {
+      background: #22543d !important;
+      color: #9ae6b4 !important;
+    }
+
+    body.dark .badge[style*="background: #fed7d7"] {
+      background: #742a2a !important;
+      color: #fc8181 !important;
+    }
+  </style>
+
+  <!-- Theme Toggle Button -->
+  <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">
+    🌙
+  </button>
+</body>
+</html>

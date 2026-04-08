@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Администрирование</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+</head>
+
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__title">Moodle Analytics</div>
+        <div class="brand__subtitle">Панель качества (демо)</div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav__item" href="/">Панель</a>
+        <a class="nav__item" href="/courses">Курсы</a>
+        <a class="nav__item" href="/students">Студенты</a>
+        <a class="nav__item" href="/analytics">Аналитика</a>
+        {% if role == "admin" %}
+          <a class="nav__item nav__item--active" href="/admin">Администрирование</a>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar__footer">
+        <div class="userbox">
+          <div class="userbox__name">{{ username }}</div>
+          <div class="userbox__meta">{{ role }}</div>
+        </div>
+        <a class="btn btn--ghost" href="/logout">Выйти</a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 class="page-title">Администрирование</h1>
+          <div class="muted">Управление системой, импорт данных и настройки</div>
+        </div>
+      </header>
+
+      {% if get_flashed_messages() %}
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+          <div class="alert alert--{{ category }} m-b-20">
+            {{ message }}
+            <button onclick="this.parentElement.style.display='none';" class="alert-close">✗</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="grid grid--2">
+
+        <!-- ПОРОГ СДАЧИ -->
+        <div class="card">
+          <div class="card__title">⚙️ Порог сдачи</div>
+          <div class="muted m-b-15">Минимальная оценка для прохождения курса</div>
+          
+          <form method="post">
+            <input type="hidden" name="action" value="update_threshold">
+            
+            <label class="label">Пороговое значение (баллы)</label>
+            <input 
+              type="number" 
+              name="pass_threshold" 
+              value="{{ pass_threshold }}" 
+              min="0" 
+              max="100" 
+              class="select"
+              required
+            >
+            
+            <div class="spacer"></div>
+            <button type="submit" class="btn btn--primary btn--block">Сохранить</button>
+          </form>
+        </div>
+
+        <!-- ИМПОРТ CSV -->
+        <div class="card">
+          <div class="card__title">📥 Импорт данных</div>
+          <div class="muted m-b-15">Загрузить CSV файл в базу данных</div>
+          
+          <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="upload_csv">
+            
+            <label class="label">Тип данных</label>
+            <select name="table_type" class="select">
+              <option value="auto" selected>Автовыбор (по имени файла)</option>
+              <option value="students">Студенты</option>
+              <option value="courses">Курсы</option>
+              <option value="grades">Оценки</option>
+              <option value="logs">Логи активности</option>
+            </select>
+            
+            <div class="spacer"></div>
+            
+            <label class="label">CSV файл(ы)</label>
+            <input type="file" name="files" accept=".csv" class="select" multiple required>
+            <div class="muted" style="font-size: 0.85rem; margin-top: 4px;">Можно выбрать несколько файлов сразу. Имя файла должно содержать <code>students</code>, <code>courses</code>, <code>grades</code> или <code>logs</code>, либо выбрать тип в списке.</div>
+            
+            <div class="spacer"></div>
+            <button type="submit" class="btn btn--primary btn--block">Импортировать</button>
+          </form>
+        </div>
+
+        <!-- СБРОС ДАННЫХ -->
+        <div class="card">
+          <div class="card__title">🗑️ Удалить все данные</div>
+          <div class="muted m-b-15">Полностью очистить загруженные данные (без изменения настроек)</div>
+          <form method="post" onsubmit="return confirm('Вы уверены? Все данные (студенты, курсы, оценки, логи) будут удалены.');">
+            <input type="hidden" name="action" value="reset_data">
+            <button type="submit" class="btn btn--primary btn--block" style="background: #f56565; border-color: rgba(245, 101, 101, 0.5);">🔥 Удалить всё</button>
+          </form>
+        </div>
+
+        <!-- ПРОСМОТР ТАБЛИЦ -->
+        <div class="card">
+          <div class="card__title">📊 Просмотр таблиц</div>
+          <div class="muted m-b-15">Просмотреть содержимое базы данных</div>
+          
+          <div class="grid-buttons">
+            <a href="/admin/view/students" class="btn btn--ghost btn--centered">📄 Студенты</a>
+            <a href="/admin/view/courses" class="btn btn--ghost btn--centered">📄 Курсы</a>
+            <a href="/admin/view/grades" class="btn btn--ghost btn--centered">📄 Оценки</a>
+            <a href="/admin/view/logs" class="btn btn--ghost btn--centered">📄 Логи</a>
+          </div>
+        </div>
+
+        <!-- ЭКСПОРТ/ИМПОРТ НАСТРОЕК -->
+        <div class="card">
+          <div class="card__title">💾 Настройки</div>
+          <div class="muted m-b-15">Сохранить или восстановить личные настройки</div>
+          
+          <div class="grid-buttons">
+            <button onclick="exportSettings()" class="btn btn--primary">📊 Скачать</button>
+            <input type="file" id="import-file" accept=".json" class="input-hidden" onchange="importSettings()">
+            <button onclick="document.getElementById('import-file').click()" class="btn btn--primary">📄 Загрузить</button>
+          </div>
+        </div>
+
+        <!-- ЭКСПОРТ ОТЧЁТОВ -->
+        <div class="card">
+          <div class="card__title">📋 Экспорт отчётов</div>
+          <div class="muted m-b-15">Скачать аналитику в формате Excel или PDF</div>
+          
+          <div class="grid-buttons">
+            <a href="/export/excel" class="btn btn--outline">📊 Скачать Excel</a>
+            <a href="/export/pdf" class="btn btn--outline">📄 Скачать PDF</a>
+          </div>
+        </div>
+
+        <!-- УПРАВЛЕНИЕ КЭШЕМ -->
+        <div class="card">
+          <div class="card__title">⚡ Производительность</div>
+          <div class="muted m-b-15">Управление кэшем приложения для оптимизации скорости</div>
+          
+          <form method="post">
+            <input type="hidden" name="action" value="cache_clear">
+            <button type="submit" class="btn btn--primary btn--block">🗑️ Очистить кэш</button>
+            <div class="muted" style="font-size: 0.85rem; margin-top: 8px;">Очистка кэша может улучшить актуальность данных.</div>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- INFO CARD -->
+      <div class="card card--light m-t-1">
+        <div class="card__title">ℹ️ Справка</div>
+        <ul style="padding: 0 20px; color: #4a5568; line-height: 1.8;">
+          <li><strong>Порог сдачи</strong> - применяется при расчёте процента не прошедших студентов</li>
+          <li><strong>Импорт данных</strong> - замещает всю таблицу новыми данными из CSV</li>
+          <li><strong>Просмотр таблиц</strong> - просмотр содержимого БД с поиском и фильтрацией</li>
+          <li><strong>Экспорт настроек</strong> - скачивает JSON файл с вашей темой и предпочтениями</li>
+          <li><strong>Экспорт отчётов</strong> - скачивает полный отчёт аналитики в Excel или PDF</li>
+          <li><strong>Кэширование</strong> - ускоряет загрузку данных антилаздачей в памяти</li>
+        </ul>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const body = document.body;
+      const themeToggle = document.getElementById('theme-toggle-fixed');
+      if (!themeToggle) {
+        console.error('Theme toggle button not found');
+        return;
+      }
+      const userTheme = '{{ user_theme }}';
+
+      const setTheme = (isDark) => {
+        body.classList.toggle('dark', isDark);
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+      };
+
+      if (userTheme === 'dark') {
+        setTheme(true);
+      } else {
+        setTheme(false);
+      }
+
+      themeToggle.addEventListener('click', () => {
+        const isDark = body.classList.toggle('dark');
+        const themeName = isDark ? 'dark' : 'light';
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+
+        fetch('/api/theme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: themeName })
+        });
+      });
+    });
+
+    function exportSettings() {
+      fetch('/api/settings/export')
+        .then(res => res.json())
+        .then(data => {
+          const link = document.createElement('a');
+          link.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2));
+          link.download = 'moodle-settings.json';
+          link.click();
+        });
+    }
+
+    function importSettings() {
+      const file = document.getElementById('import-file').files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          fetch('/api/settings/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          }).then(() => {
+            alert('Настройки успешно загружены!');
+            location.reload();
+          });
+        } catch (err) {
+          alert('Ошибка при чтении файла: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
+
+  <style>
+    .alert {
+      padding: 12px 15px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .alert--success {
+      background: #c6f6d5;
+      color: #22543d;
+      border-left: 4px solid #48bb78;
+    }
+
+    .alert--error {
+      background: #fed7d7;
+      color: #742a2a;
+      border-left: 4px solid #f56565;
+    }
+
+    body.dark .alert--success {
+      background: #22543d;
+      color: #9ae6b4;
+      border-left-color: #48bb78;
+    }
+
+    body.dark .alert--error {
+      background: #742a2a;
+      color: #fc8181;
+      border-left-color: #f56565;
+    }
+
+    ul {
+      margin: 0;
+      list-style: disc;
+    }
+
+    li {
+      margin: 8px 0;
+    }
+
+    body.dark .card[style*="background: #edf2f7"] {
+      background: #2d3748 !important;
+      color: #a0aec0;
+    }
+  </style>
+
+  <!-- Fixed Theme Toggle Button -->
+  <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">
+    🌙
+  </button>
+</body>
+</html>

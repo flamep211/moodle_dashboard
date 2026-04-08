@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Студенты</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+</head>
+
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__title">Moodle Analytics</div>
+        <div class="brand__subtitle">Панель качества (демо)</div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav__item" href="/">Панель</a>
+        <a class="nav__item" href="/courses">Курсы</a>
+        <a class="nav__item nav__item--active" href="/students">Студенты</a>
+        <a class="nav__item" href="/analytics">Аналитика</a>
+        {% if role == "admin" %}
+          <a class="nav__item" href="/admin">Администрирование</a>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar__footer">
+        <div class="userbox">
+          <div class="userbox__name">{{ username }}</div>
+          <div class="userbox__meta">{{ role }}</div>
+        </div>
+        <a class="btn btn--ghost" href="/logout">Выйти</a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 class="page-title">Студенты</h1>
+          <div class="muted">Все студенты по группам (всего: {{ total_students }})</div>
+        </div>
+      </header>
+
+      <!-- GROUPS -->
+      {% for group_name, students in groups.items() %}
+        <div class="card m-b-20">
+          <div class="flex-space-between">
+            <div class="card__title">Группа: {{ group_name }}</div>
+            <div class="muted">{{ students|length }} студентов</div>
+          </div>
+
+          <div class="m-t-1">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>ФИО</th>
+                  <th>Группа</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for student in students %}
+                  <tr>
+                    <td>{{ student.id }}</td>
+                    <td>{{ student.name }}</td>
+                    <td><span class="badge badge--light">{{ student.group }}</span></td>
+                    <td>
+                      <a href="/student/{{ student.id }}" class="btn btn--primary btn--md">Подробнее</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endfor %}
+
+      {% if not groups %}
+        <div class="empty">Нет данных о студентах</div>
+      {% endif %}
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const body = document.body;
+      const themeToggle = document.getElementById('theme-toggle-fixed');
+      if (!themeToggle) {
+        console.error('Theme toggle button not found');
+        return;
+      }
+      const userTheme = '{{ user_theme }}';
+
+      const setTheme = (isDark) => {
+        body.classList.toggle('dark', isDark);
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+      };
+
+      if (userTheme === 'dark') {
+        setTheme(true);
+      } else {
+        setTheme(false);
+      }
+
+      themeToggle.addEventListener('click', () => {
+        const isDark = body.classList.toggle('dark');
+        const themeName = isDark ? 'dark' : 'light';
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+        
+        fetch('/api/theme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: themeName })
+        });
+      });
+    });
+  </script>
+
+  <style>
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .table th {
+      background: #f7fafc;
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      color: #2d3748;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .table td {
+      padding: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #2d3748;
+    }
+
+    body.dark .table th {
+      background: #2d3748;
+      color: #e2e8f0;
+    }
+
+    body.dark .table td {
+      color: #cbd5e1;
+      border-bottom-color: #4a5568;
+    }
+
+    body.dark .badge {
+      background: #4a5568;
+      color: #a0aec0;
+    }
+  </style>
+
+  <!-- Theme Toggle Button -->
+  <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">
+    🌙
+  </button>
+</body>
+</html>

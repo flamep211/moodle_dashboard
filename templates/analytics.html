@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Аналитика и тренды</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__title">Moodle Analytics</div>
+        <div class="brand__subtitle">Панель качества (демо)</div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav__item" href="/">Панель</a>
+        <a class="nav__item" href="/courses">Курсы</a>
+        <a class="nav__item" href="/students">Студенты</a>
+        <a class="nav__item nav__item--active" href="/analytics">Аналитика</a>
+        {% if role == "admin" %}
+          <a class="nav__item" href="/admin">Администрирование</a>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar__footer">
+        <div class="userbox">
+          <div class="userbox__name">{{ username }}</div>
+          <div class="userbox__meta">{{ role }}</div>
+        </div>
+        <a class="btn btn--ghost" href="/logout">Выйти</a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 class="page-title">Аналитика и тренды</h1>
+          <div class="muted">Тренды успеваемости и прогнозы отсева</div>
+        </div>
+      </header>
+
+      <!-- ANALYSIS PERIOD -->
+      <section class="grid grid--1">
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Период анализа</div>
+            <div class="muted">Данные отображаются за: {{ period_label }}</div>
+          </div>
+          <form method="get" class="form-row">
+            <label class="label" for="months">Показать</label>
+            <select id="months" name="months" class="select" onchange="this.form.submit()">
+              <option value="1" {% if selected_months_count == '1' %}selected{% endif %}>1 месяц</option>
+              <option value="3" {% if selected_months_count == '3' %}selected{% endif %}>3 месяца</option>
+              <option value="6" {% if selected_months_count == '6' %}selected{% endif %}>6 месяцев</option>
+              <option value="12" {% if selected_months_count == '12' %}selected{% endif %}>12 месяцев</option>
+              <option value="all" {% if selected_months_count == 'all' %}selected{% endif %}>Все месяцы</option>
+            </select>
+          </form>
+        </div>
+      </section>
+
+      <!-- PREDICTIONS -->
+      <section class="grid grid--3">
+        <div class="card">
+          <div class="card__title">📈 Прогноз на следующий месяц</div>
+          <div class="kpi">{{ next_month_prediction }}</div>
+          <div class="muted">средний балл</div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">📊 Текущий средний балл</div>
+          <div class="kpi">{{ current_avg }}</div>
+          <div class="muted">баллов</div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">🎯 Тренд</div>
+          <div class="kpi" style="color: {% if next_month_prediction > current_avg %}#48bb78{% elif next_month_prediction < current_avg %}#f56565{% else %}#ed8936{% endif %}">
+            {% if next_month_prediction > current_avg %}↗ Рост{% elif next_month_prediction < current_avg %}↘ Падение{% else %} Стабильно{% endif %}
+          </div>
+          <div class="muted">прогноз</div>
+        </div>
+      </section>
+
+      <!-- TRENDS CHARTS -->
+      <section class="grid grid--2">
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Тренд среднего балла</div>
+            <div class="muted">по месяцам (исторические + текущие данные)</div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="gradeTrendChart" class="chart--tall"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Активность по неделям</div>
+            <div class="muted">последние 8 недель</div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="weeklyActivityChart" class="chart--tall"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ENROLLMENT TREND -->
+      <section class="grid grid--1">
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">Динамика зачисления студентов</div>
+            <div class="muted">количество студентов по месяцам</div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="enrollmentChart" class="chart--medium"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- DROPOUT RISK -->
+      <section class="grid grid--1">
+        <div class="card">
+          <div class="card__header">
+            <div class="card__title">⚠️ Риск отсева студентов</div>
+            <div class="muted">топ-10 студентов с наивысшим риском (на основе оценок и активности)</div>
+          </div>
+          <div class="table-wrap">
+            {% if dropout_risk %}
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Студент</th>
+                    <th>Группа</th>
+                    <th>Средний балл</th>
+                    <th>Активность</th>
+                    <th>Риск отсева</th>
+                    <th>Уровень риска</th>
+                    <th>Действия</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for student in dropout_risk %}
+                    <tr>
+                      <td>{{ student.name }}</td>
+                      <td>{{ student.group }}</td>
+                      <td>{{ student.avg_grade }}</td>
+                      <td>{{ student.total_activity }}</td>
+                      <td>{{ student.risk_score }}%</td>
+                      <td>
+                        <span class="badge badge-risk-high" style="background: {% if student.risk_level == 'Высокий' %}#fed7d7; color: #c53030{% elif student.risk_level == 'Средний' %}#fef5e7; color: #dd6b20{% else %}#c6f6d5; color: #22543d{% endif %};">{{ student.risk_level }}</span>
+                      </td>
+                      <td>
+                        <a href="/student/{{ student.student_id }}" class="btn btn--primary btn--sm">👤 Профиль</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="empty">Нет данных для анализа риска</div>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+      <!-- INSIGHTS -->
+      <section class="grid grid--1">
+        <div class="card card--light">
+          <div class="card__title">💡 Аналитические выводы</div>
+          <div class=\"p-20 line-height-1-6\">
+            <div class=\"m-b-15\">
+              <strong>📈 Тренд успеваемости:</strong>
+              {% if next_month_prediction > current_avg %}
+                Положительная динамика - средний балл растёт ({{ "%.1f"|format(next_month_prediction - current_avg) }} пунктов)
+              {% elif next_month_prediction < current_avg %}
+                Отрицательная динамика - средний балл падает ({{ "%.1f"|format(current_avg - next_month_prediction) }} пунктов)
+              {% else %}
+                Стабильная успеваемость - изменения в пределах нормы
+              {% endif %}
+            </div>
+
+            <div class=\"m-b-15\">
+              <strong>🎯 Риски отсева:</strong>
+              {% if dropout_risk %}
+                {{ dropout_risk|length }} студентов с повышенным риском отсева требуют внимания
+              {% else %}
+                Низкий уровень рисков отсева среди студентов
+              {% endif %}
+            </div>
+
+            <div>
+              <strong>📊 Рекомендации:</strong>
+              <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>Мониторить студентов с риском отсева > 50%</li>
+                <li>Анализировать причины низкой активности</li>
+                <li>Внедрять превентивные меры для групп риска</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">
+      🌙
+    </button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const body = document.body;
+      const themeToggle = document.getElementById('theme-toggle-fixed');
+      if (!themeToggle) {
+        console.error('Theme toggle button not found');
+        return;
+      }
+      const userTheme = '{{ user_theme }}';
+
+      const setTheme = (isDark) => {
+        body.classList.toggle('dark', isDark);
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+      };
+
+      if (userTheme === 'dark') {
+        setTheme(true);
+      } else {
+        setTheme(false);
+      }
+
+      themeToggle.addEventListener('click', () => {
+        const isDark = body.classList.toggle('dark');
+        const themeName = isDark ? 'dark' : 'light';
+        themeToggle.textContent = isDark ? '☀️' : '🌙';
+
+        fetch('/api/theme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: themeName })
+        });
+      });
+    });
+
+    // Grade trend chart
+    const trendData = {{ trend_data | tojson }};
+    const gradeTrendCtx = document.getElementById('gradeTrendChart');
+    new Chart(gradeTrendCtx, {
+      type: 'line',
+      data: {
+        labels: trendData.map(d => d.month),
+        datasets: [{
+          label: 'Средний балл',
+          data: trendData.map(d => d.avg_grade),
+          borderColor: 'rgba(102, 126, 234, 1)',
+          backgroundColor: 'rgba(102, 126, 234, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: false, min: 0, max: 100 }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+
+    // Weekly activity chart
+    const weeklyData = {{ weekly_activity | tojson }};
+    const weeklyCtx = document.getElementById('weeklyActivityChart');
+    new Chart(weeklyCtx, {
+      type: 'bar',
+      data: {
+        labels: weeklyData.map(d => `Неделя ${d.week.split('-')[1]}`),
+        datasets: [{
+          label: 'События',
+          data: weeklyData.map(d => d.events),
+          backgroundColor: 'rgba(72, 187, 120, 0.6)',
+          borderColor: 'rgba(72, 187, 120, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // Enrollment trend chart
+    const enrollmentCtx = document.getElementById('enrollmentChart');
+    new Chart(enrollmentCtx, {
+      type: 'line',
+      data: {
+        labels: trendData.map(d => d.month),
+        datasets: [{
+          label: 'Студентов',
+          data: trendData.map(d => d.enrolled),
+          borderColor: 'rgba(237, 137, 54, 1)',
+          backgroundColor: 'rgba(237, 137, 54, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: 'rgba(237, 137, 54, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  </script>
+
+  <style>
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    body.dark .card[style*="background: #edf2f7"] {
+      background: #2d3748 !important;
+      color: #a0aec0;
+    }
+
+    ul {
+      margin: 0;
+      list-style: disc;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+  </style>
+</body>
+</html>

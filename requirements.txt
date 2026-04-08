@@ -1,0 +1,7 @@
+Flask
+Flask-Bcrypt
+Flask-Caching
+Flask-SQLAlchemy
+pandas
+numpy
+SQLAlchemy
