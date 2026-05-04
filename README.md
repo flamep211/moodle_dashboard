@@ -197,14 +197,4 @@ pip install flask sqlalchemy pandas openpyxl bcrypt
 3. Добавьте необходимые стили в `style.css`
 4. Обновите документацию
 
-## Лицензия
-
-[Укажите лицензию проекта]
-
-## Контакты
-
-[Укажите контактную информацию]
-
----
-
-Feel free to extend the schema, add migrations, or switch to another database engine in the future.
+By Milard 2026
