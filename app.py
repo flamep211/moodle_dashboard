@@ -411,31 +411,77 @@ def create_excel_report(metrics):
     """
     output = io.BytesIO()  # Создаем объект для хранения файла в памяти
 
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Лист 1: Средние оценки по курсам
-        df_course_avg = pd.DataFrame(metrics['avg_by_course'])
-        df_course_avg.to_excel(writer, sheet_name='Average Grades', index=False)
+    # Проверяем и обеспечиваем, что все ключи существуют и не None
+    required_keys = ['avg_by_course', 'pass_rate', 'lagging', 'top_students']
+    for key in required_keys:
+        if key not in metrics or metrics[key] is None:
+            metrics[key] = []  # Устанавливаем пустой список, если ключ отсутствует или None
 
-        # Лист 2: Процент сдачи по курсам
-        df_pass_rate = pd.DataFrame(metrics['pass_rate'])
-        df_pass_rate.to_excel(writer, sheet_name='Pass Rate', index=False)
+    # Проверяем histogram
+    if 'histogram' not in metrics or metrics['histogram'] is None:
+        metrics['histogram'] = {'labels': [], 'values': []}
 
-        # Лист 3: Студенты, требующие внимания (низкие оценки)
-        df_lagging = pd.DataFrame(metrics['lagging'])
-        df_lagging.to_excel(writer, sheet_name='At Risk Students', index=False)
+    try:
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Лист 1: Средние оценки по курсам
+            df_course_avg = pd.DataFrame(metrics['avg_by_course'])
+            # Заменяем None и NaN на подходящие значения
+            df_course_avg = df_course_avg.fillna({'course_name': 'Unknown', 'grade': 0})
+            df_course_avg.to_excel(writer, sheet_name='Average Grades', index=False)
 
-        # Лист 4: Топ студентов (высокие оценки)
-        df_top = pd.DataFrame(metrics['top_students'])
-        df_top.to_excel(writer, sheet_name='Top Students', index=False)
+            # Лист 2: Процент сдачи по курсам
+            df_pass_rate = pd.DataFrame(metrics['pass_rate'])
+            df_pass_rate = df_pass_rate.fillna({'course_name': 'Unknown', 'pass_rate': 0})
+            df_pass_rate.to_excel(writer, sheet_name='Pass Rate', index=False)
 
-        # Лист 5: Распределение оценок (гистограмма)
-        df_histogram = pd.DataFrame({
-            'Grade Range': metrics['histogram']['labels'],
-            'Count': metrics['histogram']['values']
-        })
-        df_histogram.to_excel(writer, sheet_name='Grade Distribution', index=False)
+            # Лист 3: Студенты, требующие внимания (низкие оценки)
+            df_lagging = pd.DataFrame(metrics['lagging'])
+            df_lagging = df_lagging.fillna({'name': 'Unknown', 'group': 'Unknown', 'course_name': 'Unknown', 'final_grade': 0})
+            df_lagging.to_excel(writer, sheet_name='At Risk Students', index=False)
+
+            # Лист 4: Топ студентов (высокие оценки)
+            df_top = pd.DataFrame(metrics['top_students'])
+            df_top = df_top.fillna({'name': 'Unknown', 'group': 'Unknown', 'course_name': 'Unknown', 'final_grade': 0})
+            df_top.to_excel(writer, sheet_name='Top Students', index=False)
+
+            # Лист 5: Распределение оценок (гистограмма)
+            df_histogram = pd.DataFrame({
+                'Grade Range': metrics['histogram']['labels'],
+                'Count': metrics['histogram']['values']
+            })
+            df_histogram.to_excel(writer, sheet_name='Grade Distribution', index=False)
+    except Exception as e:
+        # Если openpyxl не работает, пробуем xlsxwriter
+        output = io.BytesIO()
+        try:
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                # Повторяем тот же код
+                df_course_avg = pd.DataFrame(metrics['avg_by_course'])
+                df_course_avg = df_course_avg.fillna({'course_name': 'Unknown', 'grade': 0})
+                df_course_avg.to_excel(writer, sheet_name='Average Grades', index=False)
+
+                df_pass_rate = pd.DataFrame(metrics['pass_rate'])
+                df_pass_rate = df_pass_rate.fillna({'course_name': 'Unknown', 'pass_rate': 0})
+                df_pass_rate.to_excel(writer, sheet_name='Pass Rate', index=False)
+
+                df_lagging = pd.DataFrame(metrics['lagging'])
+                df_lagging = df_lagging.fillna({'name': 'Unknown', 'group': 'Unknown', 'course_name': 'Unknown', 'final_grade': 0})
+                df_lagging.to_excel(writer, sheet_name='At Risk Students', index=False)
+
+                df_top = pd.DataFrame(metrics['top_students'])
+                df_top = df_top.fillna({'name': 'Unknown', 'group': 'Unknown', 'course_name': 'Unknown', 'final_grade': 0})
+                df_top.to_excel(writer, sheet_name='Top Students', index=False)
+
+                df_histogram = pd.DataFrame({
+                    'Grade Range': metrics['histogram']['labels'],
+                    'Count': metrics['histogram']['values']
+                })
+                df_histogram.to_excel(writer, sheet_name='Grade Distribution', index=False)
+        except Exception as e2:
+            raise Exception(f"Failed to create Excel with both engines: openpyxl error: {str(e)}, xlsxwriter error: {str(e2)}")
 
     output.seek(0)  # Перемещаем указатель в начало файла
+    return output
 
 
 def create_pdf_report(metrics, report_title="Analytics Report"):
@@ -448,188 +494,28 @@ def create_pdf_report(metrics, report_title="Analytics Report"):
     Returns:
         str: HTML содержимое отчета
     """
-    # Подготовка данных для таблиц отчета
-    courses_data = pd.DataFrame(metrics['avg_by_course'])  # Данные средних оценок
-    lagging_data = pd.DataFrame(metrics['lagging']).head(10)  # Топ-10 студентов с низкими оценками
+    from datetime import datetime
 
-    # Генерация HTML отчета с встроенными стилями
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>{report_title}</title>
-        <style>
-            body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                margin: 40px;
-                color: #333;
-                line-height: 1.6;
-                background: white;
-            }}
-            @media print {{
-                body {{ margin: 10px; }}  /* Уменьшенные отступы для печати */
-            }}
-            h1 {{
-                color: #1a5490;
-                border-bottom: 3px solid #2196F3;
-                padding-bottom: 10px;
-                margin-bottom: 10px;
-                font-size: 28px;
-            }}
-            h2 {{
-                color: #2196F3;
-                margin-top: 30px;
-                margin-bottom: 15px;
-                border-left: 4px solid #2196F3;
-                padding-left: 12px;
-                font-size: 18px;
-            }}
-            .report-date {{
-                color: #666;
-                font-size: 13px;
-                margin-bottom: 20px;
-                font-style: italic;
-            }}
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 25px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            }}
-            th {{
-                background-color: #1a5490;
-                color: white;
-                padding: 12px;
-                text-align: left;
-                border: 1px solid #1a5490;
-                font-weight: 600;
-            }}
-            td {{
-                padding: 11px;
-                border: 1px solid #ddd;
-            }}
-            tr:nth-child(even) {{
-                background-color: #f5f5f5;
-            }}
-            tr:hover {{
-                background-color: #e3f2fd;
-            }}
-            .at-risk-row {{
-                background-color: #ffebee !important;
-            }}
-            .at-risk-row:hover {{
-                background-color: #ffcdd2 !important;
-            }}
-            .summary {{
-                background-color: #e8f4f8;
-                padding: 15px;
-                border-radius: 5px;
-                margin-bottom: 20px;
-                border-left: 4px solid #2196F3;
-            }}
-            .footer {{
-                margin-top: 40px;
-                padding-top: 20px;
-                border-top: 1px solid #ddd;
-                font-size: 11px;
-                color: #999;
-                text-align: center;
-            }}
-            .print-notice {{
-                background-color: #fff3cd;
-                padding: 10px;
-                border-left: 4px solid #ffc107;
-                margin-bottom: 20px;
-                font-size: 12px;
-                display: none;
-            }}
-            @media print {{
-                .print-notice {{ display: none; }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="print-notice">
-            💡 Совет: используйте Ctrl+P или пункт меню "Печать" для сохранения как PDF
-        </div>
-        
-        <h1>{report_title}</h1>
-        <div class="report-date">📅 Дата отчёта: {datetime.now().strftime('%d.%m.%Y в %H:%M')}</div>
-        
-        <h2>📊 Средние оценки по курсам</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Название курса</th>
-                    <th style="text-align: right; width: 150px;">Средняя оценка</th>
-                </tr>
-            </thead>
-            <tbody>
-    """
-    
-    # Добавляем данные по курсам
-    for idx, row in courses_data.iterrows():
-        course_name = str(row.get('course_name', 'N/A'))
-        grade = round(float(row.get('grade', 0)), 2)
-        html_content += f"""
-                <tr>
-                    <td>{course_name}</td>
-                    <td style="text-align: right; font-weight: 500;">{grade}</td>
-                </tr>
-        """
-    
-    html_content += """
-            </tbody>
-        </table>
-        
-        <h2>⚠️ Студенты в группе риска (ниже порога сдачи)</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Имя студента</th>
-                    <th style="text-align: center; width: 100px;">Группа</th>
-                    <th>Курс</th>
-                    <th style="text-align: center; width: 100px;">Оценка</th>
-                </tr>
-            </thead>
-            <tbody>
-    """
-    
-    # Добавляем студентов в группе риска
-    if len(lagging_data) == 0:
-        html_content += "<tr><td colspan='4' style='text-align: center; color: #666;'>✓ Нет студентов в группе риска</td></tr>"
-    else:
-        for idx, row in lagging_data.iterrows():
-            name = str(row.get('name', 'N/A'))
-            group = str(row.get('group', 'N/A'))
-            course = str(row.get('course_name', 'N/A'))
-            grade = round(float(row.get('final_grade', 0)), 2)
-            html_content += f"""
-                    <tr class="at-risk-row">
-                        <td><strong>{name}</strong></td>
-                        <td style="text-align: center;">{group}</td>
-                        <td>{course}</td>
-                        <td style="text-align: center; font-weight: 500; color: #d32f2f;">{grade}</td>
-                    </tr>
-            """
-    
-    html_content += """
-            </tbody>
-        </table>
-        
-        <div class="footer">
-            <p>Этот отчёт был сгенерирован автоматически панелью аналитики.<br>
-            Для сохранения как PDF используйте Ctrl+P или "Печать" → "Сохранить как PDF".<br>
-            Для получения более подробного анализа посетите панель аналитики.</p>
-        </div>
-    </body>
-    </html>
-    """
-    
-    output = io.BytesIO(html_content.encode('utf-8'))
-    output.seek(0)
-    return output
+    # Подготовка данных для таблиц отчета
+    courses_data = metrics['avg_by_course']  # Данные средних оценок
+    pass_rate_data = metrics['pass_rate']  # Данные процента сдачи
+    lagging_data = metrics['lagging'][:10]  # Топ-10 студентов с низкими оценками
+    top_students_data = metrics['top_students']  # Топ студентов
+
+    # Рендеринг HTML с помощью шаблона
+    html_content = render_template(
+        'report.html',
+        report_title=report_title,
+        generation_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        total_students=metrics.get('total_students', 0),
+        total_courses=len(courses_data),
+        courses_data=courses_data,
+        pass_rate_data=pass_rate_data,
+        lagging_data=lagging_data,
+        top_students_data=top_students_data
+    )
+
+    return html_content
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -918,7 +804,9 @@ def export_pdf():
         threshold = int(session.get("pass_threshold", 50))
         metrics = compute_grade_metrics(students, courses, grades, pass_threshold=threshold)
         
-        html_file = create_pdf_report(metrics, "Аналитика качества обучения")
+        html_content = create_pdf_report(metrics, "Аналитика качества обучения")
+        html_file = io.BytesIO(html_content.encode('utf-8'))
+        html_file.seek(0)
         filename = f"analytics_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
         
         return send_file(
