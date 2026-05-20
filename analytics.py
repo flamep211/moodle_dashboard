@@ -7,19 +7,33 @@ import pandas as pd
 import numpy as np
 from flask import render_template
 
-from database import db
+from database import db, create_all
 from models import Student, Course, Grade, Log
 
+# --- Путь к каталогу с данными ---
+# Используем абсолютный путь, чтобы работало независимо от cwd
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
+# Файл-метка, отключающий автоматический импорт CSV при старте
 AUTO_IMPORT_DISABLED_FILE = os.path.join(DATA_DIR, ".no_auto_import")
 
 
 def ensure_data_dir():
+    """Убедиться, что директория `data/` и таблицы существуют.
+
+    - Создаёт папку `data`, если её нет.
+    - Вызывает `create_all()` для создания таблиц в БД.
+    - Пытается добавить недостающие колонки (ALTER TABLE), если база
+      была старой схемы.
+    - При первом запуске (если в таблицах нет записей) импортирует
+      данные из CSV-файлов из папки `data/`.
+    """
     os.makedirs(DATA_DIR, exist_ok=True)
-    db.create_all()
+    # create_all использует контекст приложения внутри себя
+    create_all()
 
     def ensure_column(table, column, definition):
+        # Проверяем наличие колонки через PRAGMA и добавляем при необходимости
         conn = db.engine.connect()
         try:
             existing = [r[1] for r in conn.execute(text(f"PRAGMA table_info({table})"))]
@@ -28,6 +42,8 @@ def ensure_data_dir():
         finally:
             conn.close()
 
+    # Поддерживаем обратную совместимость схемы — добавляем колонки,
+    # которые могли появиться в более новых версиях приложения.
     ensure_column("students", "imported_at", "DATETIME")
     ensure_column("students", "import_batch_id", "INTEGER")
     ensure_column("courses", "imported_at", "DATETIME")
@@ -40,6 +56,8 @@ def ensure_data_dir():
     auto_import_enabled = not os.path.exists(AUTO_IMPORT_DISABLED_FILE)
 
     def try_import(table_name, model):
+        # Импорт csv в модель, только если включён auto_import и
+        # таблица пустая (чтобы не дублировать данные)
         if not auto_import_enabled:
             return
         path = os.path.join(DATA_DIR, f"{table_name}.csv")
@@ -47,6 +65,7 @@ def ensure_data_dir():
             try:
                 df = pd.read_csv(path)
             except Exception:
+                # Невалидный CSV или ошибки парсинга — просто пропускаем
                 return
             recs = df.to_dict(orient="records")
             for r in recs:
@@ -61,6 +80,7 @@ def ensure_data_dir():
 
 
 def load_data():
+    # Убедиться, что БД и данные готовы перед чтением
     ensure_data_dir()
 
     def table_df(model, cols=None):
@@ -84,6 +104,8 @@ def load_data():
 
 
 def compute_grade_metrics(students, courses, grades, pass_threshold=50):
+    # Вычисляем метрики успеваемости: средние по курсу, процент сдачи,
+    # список отстающих, топ студентов и распределение по бинам.
     total_students = len(students)
     course_map = courses.set_index("course_id")["course_name"].to_dict()
 
@@ -162,6 +184,9 @@ def compute_grade_metrics(students, courses, grades, pass_threshold=50):
 
 
 def compute_activity_metrics(students, logs, course_id=None, days=14):
+    # Вычисляет активность за последние `days` дней. Возвращает:
+    # - по-дневную серию событий, количество активных/неактивных студентов
+    # - таблицу топ-активных
     if logs is None or len(logs) == 0:
         return {
             "activity": {"labels": [], "values": []},
@@ -218,6 +243,8 @@ def compute_activity_metrics(students, logs, course_id=None, days=14):
 
 
 def create_excel_report(metrics):
+    # Собираем несколько таблиц в Excel-файл в памяти и возвращаем
+    # объект BytesIO. Используем сначала openpyxl, при ошибке — xlsxwriter.
     output = io.BytesIO()
     required_keys = ["avg_by_course", "pass_rate", "lagging", "top_students"]
     for key in required_keys:
@@ -265,6 +292,8 @@ def create_excel_report(metrics):
 
 
 def create_pdf_report(metrics, report_title="Analytics Report"):
+    # Рендер HTML-отчёта (шаблон report.html) — можно затем конвертнуть
+    # в PDF внешним инструментом (wkhtmltopdf, WeasyPrint и т.п.).
     courses_data = metrics["avg_by_course"]
     pass_rate_data = metrics["pass_rate"]
     lagging_data = metrics["lagging"][:10]

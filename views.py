@@ -19,6 +19,9 @@ from database import db
 from models import Student, Course, Grade, Log, ImportBatch, UserSettings
 from security import login_required, role_required
 
+# Blueprint с основными маршрутами приложения.
+# Используем отдельный модуль `views.py`, чтобы не загромождать
+# `app.py` логикой обработки запросов.
 main_bp = Blueprint("main", __name__)
 
 
@@ -65,6 +68,8 @@ def login():
                     remaining = 5 - attempts
                     error = f"Неверный логин или пароль. Осталось попыток: {remaining}"
 
+    # Вход: при GET просто рендерим форму, при POST — проверяем
+    # credentials и обновляем сессию.
     return render_template("login.html", error=error)
 
 
@@ -77,6 +82,8 @@ def logout():
 @main_bp.route("/", methods=["GET"])
 @login_required
 def index():
+    # Главная страница — собираем данные, фильтруем по группе/курсу
+    # и вычисляем метрики для отображения.
     students, courses, grades, logs = load_data()
     selected_course = request.args.get("course_id", "")
     course_id = int(selected_course) if selected_course else None
@@ -150,6 +157,8 @@ def admin_settings():
 @login_required
 @role_required("admin")
 def admin_upload():
+    # Ручная загрузка CSV через админку — вызываем ensure_data_dir
+    # чтобы убедиться, что таблицы существуют и можно писать.
     ensure_data_dir()
     allowed = {"students", "courses", "grades", "logs"}
     filetype = request.form.get("filetype", "").strip()
@@ -193,6 +202,8 @@ def admin_upload():
             db.session.add(log)
     db.session.commit()
 
+    # После импорта коммитим и показываем сообщение о результате
+    db.session.commit()
     flash(f"Данные из {filetype}.csv импортированы в базу", "success")
     return redirect(url_for("main.index"))
 
@@ -266,6 +277,7 @@ def export_excel():
             download_name=filename,
         )
     except Exception as e:
+        # Ловим любые ошибки экспорта и показываем пользователю
         flash(f"Ошибка при экспорте в Excel: {str(e)}", "error")
         return redirect(url_for("main.index"))
 
@@ -398,6 +410,8 @@ def students_view():
 @login_required
 @role_required("admin")
 def admin_panel():
+    # Панель администратора: здесь обрабатываются действия из формы
+    # (обновление порога, массовый импорт, сброс данных и т.д.).
     if request.method == "POST":
         action = request.form.get("action")
         if action == "update_threshold":
