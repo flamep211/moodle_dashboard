@@ -200,7 +200,13 @@ student_id,course_id,action,date
 
 ```
 moodle_dashboard/
-├── app.py                 # Основное приложение
+├── app.py                 # Точка входа приложения
+├── analytics.py           # Загрузка данных, метрики, экспорт Excel/PDF
+├── database.py            # SQLAlchemy и подключение к БД
+├── extensions.py          # Bcrypt и кеш
+├── models.py              # ORM модели
+├── security.py            # Декораторы и учетные данные
+├── views.py               # Flask маршруты и обработчики
 ├── data/                  # CSV файлы с данными
 ├── static/
 │   └── css/
@@ -320,6 +326,6 @@ python app.py  # и измените порт в коде если нужно
 Если что-то не работает, проверьте консоль браузера (F12) и логи сервера на ошибки.
 
 ## Разработка
-В будущем можно интегрировать api moodle добавиь в app.py
 
-By Milard 2026
+- В будущем можно интегрировать API Moodle
+
