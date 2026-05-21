@@ -209,12 +209,29 @@ moodle_dashboard/
 ├── views.py               # Flask маршруты и обработчики
 ├── data/                  # CSV файлы с данными
 ├── static/
-│   └── css/
-│       └── style.css      # Стили
+│   └── css/           # CSS стили
+│       ├── admin.css      
+│       ├── analytics.css
+│       ├── base.css
+│       ├── components.css
+│       ├── courses.css
+│       ├── layout.css
+│       ├── login.css
+│       ├── report.css
+│       ├── stundent_detail.css
+│       ├── students.css
+│       ├── style.css
+│       └── variables.css
 ├── templates/             # HTML шаблоны
+│   ├── admin.html
+│   ├── analytics.html
+│   ├── сourses.html
 │   ├── index.html
 │   ├── login.html
-│   └── ...
+│   ├── report.html
+│   ├── student_deatail.html
+│   ├── stundents.html
+│   └── view_table.html
 ├── instance/              # База данных SQLite
 └── README.md             # Документация
 ```
