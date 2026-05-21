@@ -133,39 +133,31 @@ body.dark .sidebar {
   color: #fff;
 }
 
-/* Sidebar Footer */
-.sidebar__footer {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+/* Navigation Divider and Account Info */
+.nav__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: var(--spacing-xs) 0;
 }
 
-.userbox {
+.nav__account {
   padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  border: 1px solid rgba(102, 126, 234, 0.2);
-  animation: slideInLeft 0.6s ease-out 0.3s both;
-  transition: all 0.3s ease;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
 }
 
-.userbox:hover {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-}
-
-.userbox__name { 
-  font-weight: 700;
+.nav__account-name {
+  font-weight: 600;
+  font-size: var(--font-sm);
   color: #e5e7eb;
 }
 
-.userbox__meta { 
-  font-size: var(--font-xs); 
-  color: rgba(229, 231, 235, 0.75); 
-  margin-top: 4px;
-  font-weight: 500;
+.nav__account-role {
+  font-size: var(--font-xs);
+  color: rgba(229, 231, 235, 0.75);
+  margin-top: 2px;
+  text-transform: capitalize;
 }
 
 /* Topbar */

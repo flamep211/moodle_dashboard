@@ -31,15 +31,13 @@
         {% if role == "admin" %}
           <a class="nav__item" href="/admin">Администрирование</a>
         {% endif %}
-      </nav>
-
-      <div class="sidebar__footer">
-        <div class="userbox">
-          <div class="userbox__name">{{ username }}</div>
-          <div class="userbox__meta">{{ role }}</div>
+        <div class="nav__divider"></div>
+        <div class="nav__account">
+          <div class="nav__account-name">{{ username }}</div>
+          <div class="nav__account-role">{{ role }}</div>
         </div>
-        <a class="btn btn--ghost" href="/logout">Выйти</a>
-      </div>
+        <a class="nav__item" href="/logout">Выйти</a>
+      </nav>
     </aside>
 
     <!-- MAIN -->
