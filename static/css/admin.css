@@ -1,0 +1,15 @@
+.alert { padding: 12px 15px; border-radius: 6px; font-size: 14px; }
+.alert--success { background: #c6f6d5; color: #22543d; border-left: 4px solid #48bb78; }
+.alert--error { background: #fed7d7; color: #742a2a; border-left: 4px solid #f56565; }
+body.dark .alert--success { background: #22543d; color: #9ae6b4; border-left-color: #48bb78; }
+body.dark .alert--error { background: #742a2a; color: #fc8181; border-left-color: #f56565; }
+
+ul { margin: 0; list-style: disc; }
+li { margin: 8px 0; }
+
+body.dark .card[style*="background: #edf2f7"] { background: #2d3748 !important; color: #a0aec0; }
+.small { font-size: 0.85rem; }
+.mt-4 { margin-top: 4px; }
+.mt-8 { margin-top: 8px; }
+.btn--danger { background: #f56565; border-color: rgba(245, 101, 101, 0.5); color: white; }
+.info-list { padding: 0 20px; color: #4a5568; line-height: 1.8; list-style: disc; }

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 
 <body>
@@ -103,7 +104,7 @@
             
             <label class="label">CSV файл(ы)</label>
             <input type="file" name="files" accept=".csv" class="select" multiple required>
-            <div class="muted" style="font-size: 0.85rem; margin-top: 4px;">Можно выбрать несколько файлов сразу. Имя файла должно содержать <code>students</code>, <code>courses</code>, <code>grades</code> или <code>logs</code>, либо выбрать тип в списке.</div>
+            <div class="muted small mt-4">Можно выбрать несколько файлов сразу. Имя файла должно содержать <code>students</code>, <code>courses</code>, <code>grades</code> или <code>logs</code>, либо выбрать тип в списке.</div>
             
             <div class="spacer"></div>
             <button type="submit" class="btn btn--primary btn--block">Импортировать</button>
@@ -116,7 +117,7 @@
           <div class="muted m-b-15">Полностью очистить загруженные данные (без изменения настроек)</div>
           <form method="post" onsubmit="return confirm('Вы уверены? Все данные (студенты, курсы, оценки, логи) будут удалены.');">
             <input type="hidden" name="action" value="reset_data">
-            <button type="submit" class="btn btn--primary btn--block" style="background: #f56565; border-color: rgba(245, 101, 101, 0.5);">🔥 Удалить всё</button>
+            <button type="submit" class="btn btn--primary btn--block btn--danger">🔥 Удалить всё</button>
           </form>
         </div>
 
@@ -164,7 +165,7 @@
           <form method="post">
             <input type="hidden" name="action" value="cache_clear">
             <button type="submit" class="btn btn--primary btn--block">🗑️ Очистить кэш</button>
-            <div class="muted" style="font-size: 0.85rem; margin-top: 8px;">Очистка кэша может улучшить актуальность данных.</div>
+            <div class="muted small mt-8">Очистка кэша может улучшить актуальность данных.</div>
           </form>
         </div>
 
@@ -173,7 +174,7 @@
       <!-- INFO CARD -->
       <div class="card card--light m-t-1">
         <div class="card__title">ℹ️ Справка</div>
-        <ul style="padding: 0 20px; color: #4a5568; line-height: 1.8;">
+        <ul class="info-list">
           <li><strong>Порог сдачи</strong> - применяется при расчёте процента не прошедших студентов</li>
           <li><strong>Импорт данных</strong> - замещает всю таблицу новыми данными из CSV</li>
           <li><strong>Просмотр таблиц</strong> - просмотр содержимого БД с поиском и фильтрацией</li>
@@ -255,51 +256,7 @@
     }
   </script>
 
-  <style>
-    .alert {
-      padding: 12px 15px;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-
-    .alert--success {
-      background: #c6f6d5;
-      color: #22543d;
-      border-left: 4px solid #48bb78;
-    }
-
-    .alert--error {
-      background: #fed7d7;
-      color: #742a2a;
-      border-left: 4px solid #f56565;
-    }
-
-    body.dark .alert--success {
-      background: #22543d;
-      color: #9ae6b4;
-      border-left-color: #48bb78;
-    }
-
-    body.dark .alert--error {
-      background: #742a2a;
-      color: #fc8181;
-      border-left-color: #f56565;
-    }
-
-    ul {
-      margin: 0;
-      list-style: disc;
-    }
-
-    li {
-      margin: 8px 0;
-    }
-
-    body.dark .card[style*="background: #edf2f7"] {
-      background: #2d3748 !important;
-      color: #a0aec0;
-    }
-  </style>
+  
 
   <!-- Fixed Theme Toggle Button -->
   <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">

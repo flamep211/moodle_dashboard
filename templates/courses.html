@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/courses.css') }}">
 </head>
 
 <body>
@@ -53,24 +54,24 @@
           <div class="card">
             <div class="card__title">{{ course.course_name }}</div>
             
-            <div style="margin: 15px 0;">
+            <div class="margin-15">
               <div class="kpi">{{ course.enrolled_count }}</div>
               <div class="muted">студентов записано</div>
             </div>
 
-            <div style="margin: 15px 0; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
-              <div style="font-size: 12px; color: #718096;">Средняя оценка</div>
-              <div class="kpi" style="color: {% if course.avg_grade >= 70 %}#48bb78{% elif course.avg_grade >= 50 %}#ed8936{% else %}#f56565{% endif %}">
+            <div class="margin-15 section-bottom">
+              <div class="small-muted">Средняя оценка</div>
+              <div class="kpi {% if course.avg_grade >= 70 %}kpi-up{% elif course.avg_grade >= 50 %}kpi-mid{% else %}kpi-down{% endif %}">
                 {{ course.avg_grade }}
               </div>
             </div>
 
-            <div style="max-height: 250px; overflow-y: auto;">
-              <div style="font-size: 12px; color: #718096; margin-bottom: 10px; font-weight: 600;">Студенты:</div>
+            <div class="scroll-list">
+              <div class="small-muted section-title">Студенты:</div>
               {% for student in course.students %}
-                <div style="padding: 6px 0; font-size: 13px; border-bottom: 1px solid #edf2f7;">
+                <div class="student-item">
                   {{ student.name }}
-                  <div class="muted" style="font-size: 11px;">Группа: {{ student.group }}</div>
+                  <div class="student-meta muted">Группа: {{ student.group }}</div>
                 </div>
               {% else %}
                 <div class="muted">Нет студентов</div>

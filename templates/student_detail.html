@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/student_detail.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -47,7 +48,7 @@
           <div class="muted">ID: {{ student.id }} • Группа: {{ student.group }}</div>
         </div>
         <div>
-          <a href="/students" class="btn btn--ghost" style="margin-right: 10px;">← Назад к студентам</a>
+          <a href="/students" class="btn btn--ghost mr-10">← Назад к студентам</a>
         </div>
       </header>
 
@@ -67,7 +68,7 @@
 
         <div class="card">
           <div class="card__title">Средний балл</div>
-          <div class="kpi" style="color: {% if avg_grade >= pass_threshold %}#48bb78{% elif avg_grade >= 60 %}#ed8936{% else %}#f56565{% endif %}">
+          <div class="kpi {% if avg_grade >= pass_threshold %}kpi-up{% elif avg_grade >= 60 %}kpi-mid{% else %}kpi-down{% endif %}">
             {{ avg_grade }}
           </div>
           <div class="muted">из 100</div>
@@ -100,9 +101,9 @@
                       <td>{{ grade.grade }}</td>
                       <td>
                         {% if grade.grade >= pass_threshold %}
-                          <span class="badge" style="background: #c6f6d5; color: #22543d;">Сдано</span>
+                          <span class="badge badge--passed">Сдано</span>
                         {% else %}
-                          <span class="badge" style="background: #fed7d7; color: #742a2a;">Не сдано</span>
+                          <span class="badge badge--failed">Не сдано</span>
                         {% endif %}
                       </td>
                     </tr>
@@ -120,8 +121,8 @@
             <div class="card__title">Активность по курсам</div>
             <div class="muted">количество событий</div>
           </div>
-          <div class="chart-wrap">
-            <canvas id="activityChart" style="max-height: 300px;"></canvas>
+            <div class="chart-wrap">
+            <canvas id="activityChart" class="chart-max"></canvas>
           </div>
         </div>
       </section>
@@ -134,7 +135,7 @@
             <div class="muted">последние дни</div>
           </div>
           <div class="chart-wrap">
-            <canvas id="timelineChart" style="max-height: 300px;"></canvas>
+            <canvas id="timelineChart" class="chart-max"></canvas>
           </div>
         </div>
 
@@ -143,11 +144,11 @@
             <div class="card__title">Последняя активность</div>
             <div class="muted">10 последних событий</div>
           </div>
-          <div style="max-height: 300px; overflow-y: auto;">
+          <div class="log-list">
             {% if recent_logs %}
               {% for log in recent_logs %}
-                <div style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
-                  <div style="font-weight: 600; color: #2d3748;">{{ log.action }}</div>
+                <div class="log-item">
+                  <div class="log-action">{{ log.action }}</div>
                   <div class="muted">{{ log.course_name }} • {{ log.date }}</div>
                 </div>
               {% endfor %}
@@ -165,8 +166,8 @@
             <div class="card__title">Сравнение с группой</div>
             <div class="muted">как {{ student.name }} выглядит среди одногруппников</div>
           </div>
-          <div class="chart-wrap">
-            <canvas id="comparisonChart" style="max-height: 200px;"></canvas>
+            <div class="chart-wrap">
+            <canvas id="comparisonChart" class="chart-max-sm"></canvas>
           </div>
         </div>
       </section>
@@ -283,25 +284,7 @@
     });
   </script>
 
-  <style>
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 500;
-    }
-
-    body.dark .badge[style*="background: #c6f6d5"] {
-      background: #22543d !important;
-      color: #9ae6b4 !important;
-    }
-
-    body.dark .badge[style*="background: #fed7d7"] {
-      background: #742a2a !important;
-      color: #fc8181 !important;
-    }
-  </style>
+  
 
   <!-- Theme Toggle Button -->
   <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">

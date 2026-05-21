@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -84,7 +85,7 @@
 
         <div class="card">
           <div class="card__title">🎯 Тренд</div>
-          <div class="kpi" style="color: {% if next_month_prediction > current_avg %}#48bb78{% elif next_month_prediction < current_avg %}#f56565{% else %}#ed8936{% endif %}">
+          <div class="kpi {% if next_month_prediction > current_avg %}kpi-up{% elif next_month_prediction < current_avg %}kpi-down{% else %}kpi-neutral{% endif %}">
             {% if next_month_prediction > current_avg %}↗ Рост{% elif next_month_prediction < current_avg %}↘ Падение{% else %} Стабильно{% endif %}
           </div>
           <div class="muted">прогноз</div>
@@ -157,7 +158,7 @@
                       <td>{{ student.total_activity }}</td>
                       <td>{{ student.risk_score }}%</td>
                       <td>
-                        <span class="badge badge-risk-high" style="background: {% if student.risk_level == 'Высокий' %}#fed7d7; color: #c53030{% elif student.risk_level == 'Средний' %}#fef5e7; color: #dd6b20{% else %}#c6f6d5; color: #22543d{% endif %};">{{ student.risk_level }}</span>
+                        <span class="badge {% if student.risk_level == 'Высокий' %}badge--risk-high{% elif student.risk_level == 'Средний' %}badge--risk-medium{% else %}badge--risk-low{% endif %}">{{ student.risk_level }}</span>
                       </td>
                       <td>
                         <a href="/student/{{ student.student_id }}" class="btn btn--primary btn--sm">👤 Профиль</a>
@@ -200,7 +201,7 @@
 
             <div>
               <strong>📊 Рекомендации:</strong>
-              <ul style="margin: 10px 0; padding-left: 20px;">
+              <ul class="list-indent">
                 <li>Мониторить студентов с риском отсева > 50%</li>
                 <li>Анализировать причины низкой активности</li>
                 <li>Внедрять превентивные меры для групп риска</li>
@@ -332,28 +333,6 @@
     });
   </script>
 
-  <style>
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 500;
-    }
-
-    body.dark .card[style*="background: #edf2f7"] {
-      background: #2d3748 !important;
-      color: #a0aec0;
-    }
-
-    ul {
-      margin: 0;
-      list-style: disc;
-    }
-
-    li {
-      margin: 5px 0;
-    }
-  </style>
+  
 </body>
 </html>

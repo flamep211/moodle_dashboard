@@ -1,0 +1,16 @@
+.badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+
+body.dark .card[style*="background: #edf2f7"] { background: #2d3748 !important; color: #a0aec0; }
+
+ul { margin: 0; list-style: disc; }
+li { margin: 5px 0; }
+
+.kpi-up { color: #48bb78; }
+.kpi-down { color: #f56565; }
+.kpi-neutral { color: #ed8936; }
+
+.badge--risk-high { background: #fed7d7; color: #c53030; }
+.badge--risk-medium { background: #fef5e7; color: #dd6b20; }
+.badge--risk-low { background: #c6f6d5; color: #22543d; }
+
+.list-indent { margin: 10px 0; padding-left: 20px; }

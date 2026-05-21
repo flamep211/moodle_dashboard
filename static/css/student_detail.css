@@ -1,0 +1,17 @@
+.badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+
+body.dark .badge[style*="background: #c6f6d5"] { background: #22543d !important; color: #9ae6b4 !important; }
+
+body.dark .badge[style*="background: #fed7d7"] { background: #742a2a !important; color: #fc8181 !important; }
+
+.mr-10 { margin-right: 10px; }
+.kpi-up { color: #48bb78; }
+.kpi-mid { color: #ed8936; }
+.kpi-down { color: #f56565; }
+.chart-max { max-height: 300px; }
+.log-list { max-height: 300px; overflow-y: auto; }
+.log-item { padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+.log-item .log-action { font-weight: 600; color: #2d3748; }
+.badge--passed { background: #c6f6d5; color: #22543d; }
+.badge--failed { background: #fed7d7; color: #742a2a; }
+.chart-max-sm { max-height: 200px; }

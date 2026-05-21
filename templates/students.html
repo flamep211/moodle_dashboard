@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/students.css') }}">
 </head>
 
 <body>
@@ -123,51 +124,7 @@
     });
   </script>
 
-  <style>
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    .table th {
-      background: #f7fafc;
-      padding: 10px;
-      text-align: left;
-      font-weight: 600;
-      color: #2d3748;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .table td {
-      padding: 10px;
-      border-bottom: 1px solid #e2e8f0;
-      color: #2d3748;
-    }
-
-    body.dark .table th {
-      background: #2d3748;
-      color: #e2e8f0;
-    }
-
-    body.dark .table td {
-      color: #cbd5e1;
-      border-bottom-color: #4a5568;
-    }
-
-    body.dark .badge {
-      background: #4a5568;
-      color: #a0aec0;
-    }
-  </style>
+  
 
   <!-- Theme Toggle Button -->
   <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">
