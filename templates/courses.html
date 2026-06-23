@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/courses.css') }}">
 </head>
 
-<body>
+<body class="{% if user_theme == 'dark' %}dark{% endif %}">
   <div class="layout">
 
     <!-- SIDEBAR -->

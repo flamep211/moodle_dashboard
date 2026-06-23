@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
 </head>
-<body>
+<body class="{% if user_theme == 'dark' %}dark{% endif %}">
   <div class="layout">
     <aside class="sidebar">
       <div class="brand">

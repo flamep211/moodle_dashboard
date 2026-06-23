@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 
-<body>
+<body class="{% if user_theme == 'dark' %}dark{% endif %}">
   <div class="layout">
 
     <!-- SIDEBAR -->
@@ -401,7 +401,9 @@
 
         // Grade distribution pie chart
         const p = document.getElementById('gradePieChart');
-        Chart.register(ChartDataLabels);
+        if (typeof ChartDataLabels !== 'undefined') {
+          Chart.register(ChartDataLabels);
+        }
         new Chart(p, {
           type: 'pie',
           data: {
@@ -420,11 +422,16 @@
                 'rgba(237, 137, 54, 1)',
                 'rgba(245, 101, 101, 1)'
               ],
-              borderWidth: 2
+              borderWidth: 2,
+              hoverOffset: 10
             }]
           },
           options: {
             responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: 10
+            },
             plugins: {
               legend: {
                 position: 'right',
@@ -435,7 +442,7 @@
                   generateLabels: function(chart) {
                     const data = chart.data;
                     return data.labels.map((label, i) => ({
-                      text: label,
+                      text: label + ' (' + data.datasets[0].data[i] + ')',
                       fillStyle: data.datasets[0].backgroundColor[i],
                       pointStyle: 'circle',
                       hidden: false,
@@ -446,18 +453,22 @@
               },
               datalabels: {
                 display: true,
-                color: '#fff',
+                color: '#ffffff',
                 font: {
-                  weight: 'bold',
-                  size: 13
+                  weight: '700',
+                  size: 12
                 },
+                textStrokeColor: 'rgba(0, 0, 0, 0.65)',
+                textStrokeWidth: 4,
                 formatter: function(value, context) {
                   const total = context.dataset.data.reduce((a, b) => a + b, 0);
                   const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                  return percentage + '%';
+                  return percentage > 0 ? percentage + '%' : '';
                 },
-                anchor: 'center',
-                align: 'center'
+                anchor: 'end',
+                align: 'start',
+                offset: -10,
+                clamp: true
               },
               tooltip: {
                 callbacks: {
@@ -475,7 +486,7 @@
 
     </main>
 
-    <!-- Fixed Theme Toggle Button -->
+    <!-- Кнопка переключения темы -->
     <button id="theme-toggle-fixed" class="theme-toggle-fixed" title="Переключить тему">
       🌙
     </button>

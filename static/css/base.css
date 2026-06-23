@@ -11,13 +11,17 @@ html {
   scroll-behavior: smooth;
 }
 
+html {
+  background: var(--background-light);
+}
+
 body {
   margin: 0;
   font-family: var(--font-family);
   background: var(--background-light);
   color: var(--color-text-light);
   min-height: 100vh;
-  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body.dark {
